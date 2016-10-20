@@ -231,6 +231,15 @@ var hier = (function() {
 		return root.toString();
 	};
 	
+	// clears the current tree
+	// useful for unit testing
+	api.clear = function() {
+		root.die();
+		root = createNode('root');
+		
+		pot = {};
+	};
+	
 	return api;
 	
 }());
