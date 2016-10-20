@@ -1,0 +1,22 @@
+{
+  "name": "hier",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "uglifyjs src/hier.js --output dist/hier.js",
+    "watch": "watch \"npm run build\" src",
+    "test": "qunit-cli --code dist/hier.js test/tests.js"
+  },
+  "author": "pavelsof",
+  "license": "ISC",
+  "devDependencies": {
+    "qunit-cli": "^0.2.0",
+    "qunitjs": "^2.0.1",
+    "uglify-js": "^2.7.3",
+    "watch": "^1.0.1"
+  }
+}

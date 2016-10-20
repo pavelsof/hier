@@ -1,0 +1,5 @@
+/dist/*
+/meta/*
+/node_modules/*
+
+*.swp
