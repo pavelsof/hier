@@ -32,9 +32,9 @@ var hier = (function() {
 		// the path object
 		path = {};
 		
-		// returns the array representation
+		// returns a copy of the array representation
 		path.toArray = function() {
-			return array;
+			return array.slice();
 		};
 		
 		// returns the string representation
@@ -50,6 +50,26 @@ var hier = (function() {
 		// returns the path array up to the last item
 		path.getUpToLast = function() {
 			return array.slice(0, array.length-1);
+		};
+		
+		// returns the longest common prefix with the given path
+		// expects and returns path objects
+		path.getCommonPath = function(pathB) {
+			var subpath = [];
+			var arrayB = pathB.toArray();
+			
+			var len = array.length ? array.length > arrayB.length : arrayB.length;
+			var i;
+			
+			for(i = 0; i < len; i++) {
+				if(array[i] === arrayB[i]) {
+					subpath.push(item);
+				} else {
+					break;
+				}
+			}
+			
+			return createPath('/'+subpath.join('/'));
 		};
 		
 		return path;
@@ -152,15 +172,59 @@ var hier = (function() {
 	};
 	
 	
+	// constructor for a simple map object
+	// this constructor be replaced by new Map() in the far future
+	var createMap = function() {
+		var map = {};
+		
+		map.set = function(key, value) {
+			map[key.toString()] = value;
+			return map;
+		};
+		
+		map.get = function(key) {
+			if(map.hasOwnProperty(key.toString())) {
+				return map[key.toString()];
+			}
+		};
+		
+		map.delete = function(key) {
+			if(map.hasOwnProperty(key.toString())) {
+				delete map[key.toString()];
+				return true;
+			}
+			return false;
+		};
+		
+		map.clear = function() {
+			var key;
+			for(key in map) {
+				if(map.hasOwnProperty(key)) {
+					delete map[key];
+				}
+			}
+		};
+		
+		return map;
+	};
+	
+	
 	// 
-	// variables
+	// the state
 	// 
 	
-	// the root node object
-	var root = createNode('root');
+	// the root node of the hier tree
+	var root;
 	
-	// the pot obejct contains the registered paths
-	var pot = {};
+	// map of the registered paths
+	var registry;
+	
+	// inits the module's blank state
+	// first invoked right before the module's return
+	var init = function() {
+		root = createNode('root');
+		registry = createMap();
+	};
 	
 	
 	// 
@@ -172,19 +236,32 @@ var hier = (function() {
 	var api = {};
 	
 	// creates a new node and adds it to the hier tree
+	// if the node is already there, does nothing
 	api.add = function(path, elem, func, params) {
-		var newNode, parentNode;
+		var newNode, parentNode, regValue;
 		
 		path = createPath(path);
+		
+		if(root.find(path.toArray())) {
+			return;
+		}
 		
 		parentNode = root.find(path.getUpToLast());
 		if(parentNode == null) {
 			throw new Error('Could not find path: '+path.toString());
 		}
 		
-		newNode = createNode(path.getLast(), elem, func);
-		parentNode.addChild(newNode);
+		if(elem && func) {
+			newNode = createNode(path.getLast(), elem, func);
+		} else {
+			regValue = registry.get(path);
+			if(!regValue) {
+				throw new Error('Could not find in registry: '+path.toString());
+			}
+			newNode = createNode(path.getLast(), regValue.elem, regValue.func);
+		}
 		
+		parentNode.addChild(newNode);
 		newNode.update(params);
 	};
 	
@@ -202,6 +279,12 @@ var hier = (function() {
 		parentNode.removeChild(path.getLast());
 	};
 	
+	// replaces one node with another
+	api.replace = function(pathA, pathB) {
+		api.remove(pathA);
+		api.add(pathB);
+	};
+	
 	// invokes the update function of the node at the given path
 	api.update = function(path, params) {
 		var node;
@@ -216,14 +299,21 @@ var hier = (function() {
 		node.update(params);
 	};
 	
+	// changes the current path, adding and removing nodes as necessary
+	api.go = function(path) {
+		path = createPath(path);
+	};
+	
 	// adds a path to the pot
 	api.reg = function(path, elem, func) {
-		pot[path] = {elem: elem, func: func};
+		path = createPath(path);
+		registry.set(path, {'elem': elem, 'func': func});
 	};
 	
 	// removes a path from the pot
 	api.unreg = function(path) {
-		delete pot[path];
+		path = createPath(path);
+		registry.delete(path);
 	};
 	
 	// returns the string representation of the root node
@@ -231,15 +321,18 @@ var hier = (function() {
 		return root.toString();
 	};
 	
-	// clears the current tree
+	// clears the current tree and registry
 	// useful for unit testing
 	api.clear = function() {
 		root.die();
-		root = createNode('root');
+		registry.clear();
 		
-		pot = {};
+		init();
 	};
 	
+	
+	// ready to go
+	init();
 	return api;
 	
 }());
