@@ -27,32 +27,34 @@ QUnit.test('path error at empty string', function(assert) {
 
 // add
 QUnit.test('add a node', function(assert) {
-	hier.add('/node', 'elem', function() {});
+	hier.add('/node', '#qunit-fixture', function() {});
 	assert.equal(hier.show(), '(root (node))');
 });
 
 QUnit.test('add nested nodes', function(assert) {
-	hier.add('/node', 'elem', function() {});
-	hier.add('/node/nested', 'elem', function() {});
-	hier.add('/node/another', 'elem', function() {});
+	hier.add('/node', '#qunit-fixture', function(elem) {
+		elem.innerHTML = '<div id="nested"></div><div id="another"></div>';
+	});
+	hier.add('/node/nested', '#nested', function() {});
+	hier.add('/node/another', '#another', function() {});
 	assert.equal(hier.show(), '(root (node (nested) (another)))');
 });
 
 QUnit.test('add an added node does nothing', function(assert) {
-	hier.add('/node', 'elem', function() {});
-	hier.add('/node', 'elem', function() {});
+	hier.add('/node', '#qunit-fixture', function() {});
+	hier.add('/node', '#qunit-fixture', function() {});
 	assert.equal(hier.show(), '(root (node))');
 });
 
 QUnit.test('add invokes the update func', function(assert) {
-	hier.add('/node', 'elem', function(elem) {
-		assert.equal(elem, 'elem');
+	hier.add('/node', '#qunit-fixture', function(elem) {
+		assert.equal(elem, document.querySelector('#qunit-fixture'));
 	});
 });
 
 QUnit.test('add invokes the update func with params', function(assert) {
-	hier.add('/node', 'elem', function(elem, param) {
-		assert.equal(elem, 'elem');
+	hier.add('/node', '#qunit-fixture', function(elem, param) {
+		assert.equal(elem, document.querySelector('#qunit-fixture'));
 		assert.equal(param, 'param');
 	}, 'param');
 });
@@ -65,21 +67,25 @@ QUnit.test('add error at short add without reg', function(assert) {
 
 // remove
 QUnit.test('remove a node', function(assert) {
-	hier.add('/node', 'elem', function() {});
+	hier.add('/node', '#qunit-fixture', function() {});
 	hier.remove('/node');
 	assert.equal(hier.show(), '(root)');
 });
 
 QUnit.test('remove a nested node', function(assert) {
-	hier.add('/node', 'elem', function() {});
-	hier.add('/node/nested', 'elem', function() {});
+	hier.add('/node', '#qunit-fixture', function(elem) {
+		elem.innerHTML = '<div id="nested"></div>';
+	});
+	hier.add('/node/nested', '#nested', function() {});
 	hier.remove('/node/nested');
 	assert.equal(hier.show(), '(root (node))');
 });
 
 QUnit.test('remove a parent node', function(assert) {
-	hier.add('/node', 'elem', function() {});
-	hier.add('/node/nested', 'elem', function() {});
+	hier.add('/node', '#qunit-fixture', function(elem) {
+		elem.innerHTML = '<div id="nested"></div>';
+	});
+	hier.add('/node/nested', '#nested', function() {});
 	hier.remove('/node');
 	assert.equal(hier.show(), '(root)');
 });
@@ -89,10 +95,10 @@ QUnit.test('update invokes the update func', function(assert) {
 	assert.expect(2);
 	
 	var update = function(elem) {
-		assert.equal(elem, 'elem');
+		assert.equal(elem, document.querySelector('#qunit-fixture'));
 	};
 	
-	hier.add('/node', 'elem', update);
+	hier.add('/node', '#qunit-fixture', update);
 	hier.update('/node');
 });
 
@@ -100,16 +106,16 @@ QUnit.test('update invokes the update func with params', function(assert) {
 	assert.expect(4);
 	
 	var update = function(elem, param) {
-		assert.equal(elem, 'elem');
+		assert.equal(elem, document.querySelector('#qunit-fixture'));
 		assert.equal(param, 'param');
 	};
 	
-	hier.add('/node', 'elem', update, 'param');
+	hier.add('/node', '#qunit-fixture', update, 'param');
 	hier.update('/node', 'param');
 });
 
 QUnit.test('update error at non-existing node', function(assert) {
-	hier.add('/node', 'elem', function() {});
+	hier.add('/node', '#qunit-fixture', function() {});
 	assert.raises(function() {
 		hier.update('/another');
 	}, /could not find path/i);
@@ -117,7 +123,7 @@ QUnit.test('update error at non-existing node', function(assert) {
 
 // reg
 QUnit.test('reg a node and add', function(assert) {
-	hier.reg('/node', 'elem', function() {});
+	hier.reg('/node', '#qunit-fixture', function() {});
 	assert.equal(hier.show(), '(root)');
 	
 	hier.add('/node');
@@ -125,26 +131,16 @@ QUnit.test('reg a node and add', function(assert) {
 });
 
 QUnit.test('reg a nested node and add', function(assert) {
-	hier.reg('/node/nested', 'elem', function() {});
+	hier.reg('/node/nested', '#nested', function() {});
 	assert.equal(hier.show(), '(root)');
 	
-	hier.add('/node', 'elem', function() {});
+	hier.add('/node', '#qunit-fixture', function(elem) {
+		elem.innerHTML = '<div id="nested"></div>';
+	});
 	assert.equal(hier.show(), '(root (node))');
 	
 	hier.add('/node/nested');
 	assert.equal(hier.show(), '(root (node (nested)))');
-});
-
-// replace
-QUnit.test('replace one node with another', function(assert) {
-	hier.add('/one', 'elem', function() {});
-	assert.equal(hier.show(), '(root (one))');
-	
-	hier.reg('/another', 'elem', function() {});
-	assert.equal(hier.show(), '(root (one))');
-	
-	hier.replace('/one', '/another');
-	assert.equal(hier.show(), '(root (another))');
 });
 
 // show

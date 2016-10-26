@@ -52,37 +52,36 @@ var hier = (function() {
 			return array.slice(0, array.length-1);
 		};
 		
-		// returns the longest common prefix with the given path
-		// expects and returns path objects
-		path.getCommonPath = function(pathB) {
-			var subpath = [];
-			var arrayB = pathB.toArray();
-			
-			var len = array.length ? array.length > arrayB.length : arrayB.length;
-			var i;
-			
-			for(i = 0; i < len; i++) {
-				if(array[i] === arrayB[i]) {
-					subpath.push(item);
-				} else {
-					break;
-				}
-			}
-			
-			return createPath('/'+subpath.join('/'));
-		};
-		
 		return path;
 	};
 	
 	
 	// constructor for a node object
+	// 
 	// each node object represents a component of the webapp employing hier
 	// such a component is defined by its root DOM element and an update
 	// function that will be invoked when the component is activated
+	// 
+	// expects the new node's name, its dom element, and its update function
 	var createNode = function(name, elem, func) {
 		var node = {};
 		var children = {};
+		
+		// returns the node's name
+		node.getName = function() {
+			return name;
+		};
+		
+		// returns the node's dom element
+		node.getElem = function() {
+			return elem;
+		};
+		
+		// invokes the node's update function and returns its output
+		// it is invoked with elem as first arg and with params as second
+		node.update = function(params) {
+			return func(elem, params);
+		};
 		
 		// recursively finds the node corresponding to the given path array
 		// returns null if there is no such node
@@ -104,14 +103,34 @@ var hier = (function() {
 			return null;
 		};
 		
-		// adds another node object as a child
-		// raises an error if there already is a child with the same name
-		node.addChild = function(child) {
-			if(children.hasOwnProperty(child.getName())) {
-				throw new Error('There already is a child named '+child.getName());
+		// adds a child node
+		// expects the name of the new node, a string which will be fed into
+		// the querySelector method of the parent elem to provide the node's
+		// elem, and its update function
+		node.addChild = function(chName, chElemQ, chFunc) {
+			var chElem, i;
+			
+			// raise an error if there is a node with the same name
+			if(children.hasOwnProperty(chName)) {
+				throw new Error('There already is a child named '+chName);
 			}
 			
-			children[child.getName()] = child;
+			// raise an error if the dom element does not exist
+			chElem = elem.querySelector(chElemQ);
+			if(chElem == null) {
+				throw new Error('Could not find element: '+chElemQ);
+			}
+			
+			// if there is a child occupying the same elem, remove it
+			for(i in children) {
+				if(children.hasOwnProperty(i)) {
+					if(children[i].getElem() == chElem) {
+						node.removeChild(i);
+					}
+				}
+			}
+			
+			children[chName] = createNode(chName, chElem, chFunc);
 		};
 		
 		// removes the child with the specified name
@@ -123,33 +142,6 @@ var hier = (function() {
 			
 			children[childName].die();
 			delete children[childName];
-		};
-		
-		// invokes the node's update function and returns its output
-		// it is invoked with elem as first arg and with params as second
-		node.update = function(params) {
-			return func(elem, params);
-		};
-		
-		// returns the node's name
-		node.getName = function() {
-			return name;
-		};
-		
-		// returns string of the form (name child child ...)
-		// useful for unit testing and debugging
-		node.toString = function() {
-			var childName, li;
-			
-			li = [name];
-			
-			for(childName in children) {
-				if(children.hasOwnProperty(childName)) {
-					li.push(children[childName].toString());
-				}
-			}
-			
-			return '('+ li.join(' ') +')';
 		};
 		
 		// recursively removes all children
@@ -166,6 +158,22 @@ var hier = (function() {
 			children = null;
 			func = null;
 			elem = null;
+		};
+		
+		// returns string of the form (name child child ...)
+		// useful for unit testing and debugging
+		node.toString = function() {
+			var childName, li;
+			
+			li = [name];
+			
+			for(childName in children) {
+				if(children.hasOwnProperty(childName)) {
+					li.push(children[childName].toString());
+				}
+			}
+			
+			return '('+ li.join(' ') +')';
 		};
 		
 		return node;
@@ -222,7 +230,7 @@ var hier = (function() {
 	// inits the module's blank state
 	// first invoked right before the module's return
 	var init = function() {
-		root = createNode('root');
+		root = createNode('root', document.querySelector('body'));
 		registry = createMap();
 	};
 	
@@ -237,32 +245,36 @@ var hier = (function() {
 	
 	// creates a new node and adds it to the hier tree
 	// if the node is already there, does nothing
+	// if there is a sibling with the same elem, replaces it
 	api.add = function(path, elem, func, params) {
-		var newNode, parentNode, regValue;
+		var parentNode, regValue;
 		
 		path = createPath(path);
 		
+		// do nothing if the node is already there
 		if(root.find(path.toArray())) {
 			return;
 		}
 		
+		// find the parent node
 		parentNode = root.find(path.getUpToLast());
 		if(parentNode == null) {
 			throw new Error('Could not find path: '+path.toString());
 		}
 		
-		if(elem && func) {
-			newNode = createNode(path.getLast(), elem, func);
-		} else {
+		// find elem and func in the registry if not provided
+		if(!(elem && func)) {
 			regValue = registry.get(path);
 			if(!regValue) {
 				throw new Error('Could not find in registry: '+path.toString());
 			}
-			newNode = createNode(path.getLast(), regValue.elem, regValue.func);
+			elem = regValue.elem;
+			func = regValue.func;
 		}
 		
-		parentNode.addChild(newNode);
-		newNode.update(params);
+		// add and update
+		parentNode.addChild(path.getLast(), elem, func);
+		parentNode.find([path.getLast()]).update(params);
 	};
 	
 	// removes the node at the given path
@@ -279,12 +291,6 @@ var hier = (function() {
 		parentNode.removeChild(path.getLast());
 	};
 	
-	// replaces one node with another
-	api.replace = function(pathA, pathB) {
-		api.remove(pathA);
-		api.add(pathB);
-	};
-	
 	// invokes the update function of the node at the given path
 	api.update = function(path, params) {
 		var node;
@@ -297,11 +303,6 @@ var hier = (function() {
 		}
 		
 		node.update(params);
-	};
-	
-	// changes the current path, adding and removing nodes as necessary
-	api.go = function(path) {
-		path = createPath(path);
 	};
 	
 	// adds a path to the pot
