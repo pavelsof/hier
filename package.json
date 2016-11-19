@@ -1,7 +1,7 @@
 {
   "name": "hier",
   "version": "0.0.0",
-  "description": "tree keeping track what is on the page",
+  "description": "tree keeping track of what is on the page",
   "main": "index.js",
   "directories": {
     "test": "test"

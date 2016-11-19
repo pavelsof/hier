@@ -143,6 +143,14 @@ QUnit.test('reg a nested node and add', function(assert) {
 	assert.equal(hier.show(), '(root (node (nested)))');
 });
 
+QUnit.test('reg a node and add with params', function(assert) {
+	hier.reg('/node', '#qunit-fixture', function(elem, param) {
+		assert.equal(elem, document.querySelector('#qunit-fixture'));
+		assert.equal(param, 'param');
+	});
+	hier.add('/node', 'param');
+});
+
 // show
 QUnit.test('show root on its own', function(assert) {
 	assert.equal(hier.show(), '(root)');

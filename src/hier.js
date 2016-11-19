@@ -268,6 +268,7 @@ var hier = (function() {
 			if(!regValue) {
 				throw new Error('Could not find in registry: '+path.toString());
 			}
+			params = elem;  // the second arg will be the params then
 			elem = regValue.elem;
 			func = regValue.func;
 		}
