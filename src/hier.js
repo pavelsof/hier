@@ -306,6 +306,13 @@ var hier = (function() {
 		node.update(params);
 	};
 	
+	// checks whether there is a node at the given path
+	// returns a boolean or throws an error if the path is malformed
+	api.has = function(path) {
+		path = createPath(path);
+		return !(root.find(path.toArray()) == null);
+	};
+	
 	// adds a path to the pot
 	api.reg = function(path, elem, func) {
 		path = createPath(path);

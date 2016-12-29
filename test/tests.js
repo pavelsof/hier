@@ -121,6 +121,24 @@ QUnit.test('update error at non-existing node', function(assert) {
 	}, /could not find path/i);
 });
 
+// has
+QUnit.test('has checks correctly', function(assert) {
+	assert.equal(hier.has('/node'), false);
+	hier.add('/node', '#qunit-fixture', function() {});
+	assert.equal(hier.has('/node'), true);
+	hier.remove('/node');
+	assert.equal(hier.has('/node'), false);
+});
+
+QUnit.test('has is not confused by reg', function(assert) {
+	hier.reg('/node', '#qunit-fixture', function() {});
+	assert.equal(hier.has('/node'), false);
+	hier.add('/node');
+	assert.equal(hier.has('/node'), true);
+	hier.remove('/node');
+	assert.equal(hier.has('/node'), false);
+});
+
 // reg
 QUnit.test('reg a node and add', function(assert) {
 	hier.reg('/node', '#qunit-fixture', function() {});
