@@ -145,8 +145,8 @@ var hier = (function() {
 		};
 		
 		// recursively removes all children
-		// unsets the node's properties
-		node.die = function() {
+		// leaves children an empty {}
+		node.removeChildren = function() {
 			var childName;
 			
 			for(childName in children) {
@@ -154,6 +154,14 @@ var hier = (function() {
 					children[childName].die();
 				}
 			}
+			
+			children = {};
+		};
+		
+		// recursively removes all children
+		// unsets the node's properties
+		node.die = function() {
+			node.removeChildren();
 			
 			children = null;
 			func = null;
@@ -293,6 +301,9 @@ var hier = (function() {
 	};
 	
 	// invokes the update function of the node at the given path
+	// 
+	// children nodes are removed to ensure the same blank state as when
+	// invoking hier.add(path)
 	api.update = function(path, params) {
 		var node;
 		
@@ -302,6 +313,8 @@ var hier = (function() {
 		if(node == null) {
 			throw new Error('Could not find path: '+path.toString());
 		}
+		
+		node.removeChildren();
 		
 		node.update(params);
 	};

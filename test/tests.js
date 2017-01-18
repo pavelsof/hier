@@ -121,6 +121,18 @@ QUnit.test('update error at non-existing node', function(assert) {
 	}, /could not find path/i);
 });
 
+QUnit.test('update removes the children nodes', function(assert) {
+	hier.add('/node', '#qunit-fixture', function(elem) {
+		elem.innerHTML = '<div id="nested"></div>';
+	});
+	hier.add('/node/nested', '#nested', function() {});
+	
+	hier.update('/node');
+	
+	assert.equal(hier.show(), '(root (node))');
+	assert.equal(hier.has('/node/nested'), false);
+});
+
 // has
 QUnit.test('has checks correctly', function(assert) {
 	assert.equal(hier.has('/node'), false);
