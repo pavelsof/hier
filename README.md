@@ -28,3 +28,8 @@ do `hier.add(path, params)` from then on.
 `hier.unreg(path)` and you cannot use the shorthand `hier.add` any more.
 
 `hier.show()` returns string representation of the tree.
+
+
+## licence
+
+MIT.
