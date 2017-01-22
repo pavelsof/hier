@@ -27,9 +27,15 @@ do `hier.add(path, params)` from then on.
 
 `hier.unreg(path)` and you cannot use the shorthand `hier.add` any more.
 
+`hier.on(hook, func)` hooks `func(path, view)` to one of `pre-init`,
+`post-init`, `pre-remove` or `post-remove`; the `view` is the output of the
+constructor.
+
+`hier.off(hook)` removes the previously hooked function.
+
 `hier.show()` returns string representation of the tree.
 
 
 ## licence
 
-MIT.
+MIT

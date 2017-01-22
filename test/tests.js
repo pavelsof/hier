@@ -181,6 +181,63 @@ QUnit.test('reg a node and add with params', function(assert) {
 	hier.add('/node', 'param');
 });
 
+// on
+QUnit.test('on pre-init', function(assert) {
+	assert.expect(1);
+	
+	hier.on('pre-init', function(path) {
+		assert.equal(path, '/node');
+	});
+	
+	hier.add('/node', '#qunit-fixture', function() {});
+	
+	hier.off('pre-init');
+	hier.add('/node', '#qunit-fixture', function() {});
+});
+
+QUnit.test('on post-init', function(assert) {
+	assert.expect(2);
+	
+	hier.on('post-init', function(path, view) {
+		assert.equal(path, '/node');
+		assert.equal(view, 42);
+	});
+	
+	hier.add('/node', '#qunit-fixture', function() { return 42; });
+	
+	hier.off('post-init');
+	hier.add('/node', '#qunit-fixture', function() { return 42; });
+});
+
+QUnit.test('on pre-remove', function(assert) {
+	assert.expect(2);
+	
+	hier.add('/node', '#qunit-fixture', function() { return 42; });
+	hier.on('pre-remove', function(path, view) {
+		assert.equal(path, '/node');
+		assert.equal(view, 42);
+	});
+	hier.remove('/node');
+	
+	hier.add('/node', '#qunit-fixture', function() { return 42; });
+	hier.off('pre-remove');
+	hier.remove('/node');
+});
+
+QUnit.test('on post-remove', function(assert) {
+	assert.expect(1);
+	
+	hier.add('/node', '#qunit-fixture', function() {});
+	hier.on('post-remove', function(path) {
+		assert.equal(path, '/node');
+	});
+	hier.remove('/node');
+	
+	hier.off('post-remove');
+	hier.add('/node', '#qunit-fixture', function() {});
+	hier.remove('/node');
+});
+
 // show
 QUnit.test('show root on its own', function(assert) {
 	assert.equal(hier.show(), '(root)');

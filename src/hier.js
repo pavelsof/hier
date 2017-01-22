@@ -56,6 +56,16 @@ var hier = (function() {
 	};
 	
 	
+	// constructor for the root path object
+	// the alternative would be to have a createRootNode
+	var createRootPath = function() {
+		return {
+			toString: function() { return '/'; },
+			getLast: function() { return 'root'; }
+		};
+	};
+	
+	
 	// constructor for a node object
 	// 
 	// each node object represents a component of the webapp employing hier
@@ -63,13 +73,14 @@ var hier = (function() {
 	// function that will be invoked when the component is activated
 	// 
 	// expects the new node's name, its dom element, and its update function
-	var createNode = function(name, elem, func) {
+	var createNode = function(path, elem, func) {
 		var node = {};
 		var children = {};
+		var view;
 		
 		// returns the node's name
 		node.getName = function() {
-			return name;
+			return path.getLast();
 		};
 		
 		// returns the node's dom element
@@ -79,8 +90,22 @@ var hier = (function() {
 		
 		// invokes the node's update function and returns its output
 		// it is invoked with elem as first arg and with params as second
+		// 
+		// the return value of the function is stored in the view var
+		// 
+		// calls the pre-init and post-init hook callbacks, if such
 		node.update = function(params) {
-			return func(elem, params);
+			if(hooks.has('pre-init')) {
+				hooks.get('pre-init')(path.toString());
+			}
+			
+			view = func(elem, params);
+			
+			if(hooks.has('post-init')) {
+				hooks.get('post-init')(path.toString(), view);
+			}
+			
+			return view;
 		};
 		
 		// recursively finds the node corresponding to the given path array
@@ -107,8 +132,8 @@ var hier = (function() {
 		// expects the name of the new node, a string which will be fed into
 		// the querySelector method of the parent elem to provide the node's
 		// elem, and its update function
-		node.addChild = function(chName, chElemQ, chFunc) {
-			var chElem, i;
+		node.addChild = function(chPath, chElemQ, chFunc) {
+			var i, chElem, chName = chPath.getLast();
 			
 			// raise an error if there is a node with the same name
 			if(children.hasOwnProperty(chName)) {
@@ -130,7 +155,7 @@ var hier = (function() {
 				}
 			}
 			
-			children[chName] = createNode(chName, chElem, chFunc);
+			children[chName] = createNode(chPath, chElem, chFunc);
 		};
 		
 		// removes the child with the specified name
@@ -160,12 +185,24 @@ var hier = (function() {
 		
 		// recursively removes all children
 		// unsets the node's properties
+		// 
+		// calls the pre-remove and post-remove hook callbacks, if such
 		node.die = function() {
 			node.removeChildren();
 			
-			children = null;
-			func = null;
+			if(hooks.has('pre-remove')) {
+				hooks.get('pre-remove')(path.toString(), view);
+			}
+			
 			elem = null;
+			func = null;
+			view = null;
+			
+			if(hooks.has('post-remove')) {
+				hooks.get('post-remove')(path.toString());
+			}
+			
+			path = null;
 		};
 		
 		// returns string of the form (name child child ...)
@@ -173,7 +210,7 @@ var hier = (function() {
 		node.toString = function() {
 			var childName, li;
 			
-			li = [name];
+			li = [path.getLast()];
 			
 			for(childName in children) {
 				if(children.hasOwnProperty(childName)) {
@@ -191,22 +228,26 @@ var hier = (function() {
 	// constructor for a simple map object
 	// this constructor be replaced by new Map() in the far future
 	var createMap = function() {
+		var data = {};
 		var map = {};
 		
 		map.set = function(key, value) {
-			map[key.toString()] = value;
-			return map;
+			data[key.toString()] = value;
 		};
 		
 		map.get = function(key) {
-			if(map.hasOwnProperty(key.toString())) {
-				return map[key.toString()];
+			if(data.hasOwnProperty(key.toString())) {
+				return data[key.toString()];
 			}
 		};
 		
+		map.has = function(key) {
+			return data.hasOwnProperty(key.toString());
+		};
+		
 		map.delete = function(key) {
-			if(map.hasOwnProperty(key.toString())) {
-				delete map[key.toString()];
+			if(data.hasOwnProperty(key.toString())) {
+				delete data[key.toString()];
 				return true;
 			}
 			return false;
@@ -214,9 +255,9 @@ var hier = (function() {
 		
 		map.clear = function() {
 			var key;
-			for(key in map) {
-				if(map.hasOwnProperty(key)) {
-					delete map[key];
+			for(key in data) {
+				if(data.hasOwnProperty(key)) {
+					delete data[key];
 				}
 			}
 		};
@@ -235,11 +276,17 @@ var hier = (function() {
 	// map of the registered paths
 	var registry;
 	
+	// map of the hook callbacks
+	// the values must always be function
+	var hooks;
+	
 	// inits the module's blank state
 	// first invoked right before the module's return
 	var init = function() {
-		root = createNode('root', document.querySelector('body'));
 		registry = createMap();
+		hooks = createMap();
+		
+		root = createNode(createRootPath(), document.querySelector('body'));
 	};
 	
 	
@@ -282,7 +329,7 @@ var hier = (function() {
 		}
 		
 		// add and update
-		parentNode.addChild(path.getLast(), elem, func);
+		parentNode.addChild(path, elem, func);
 		parentNode.find([path.getLast()]).update(params);
 	};
 	
@@ -338,6 +385,31 @@ var hier = (function() {
 		registry.delete(path);
 	};
 	
+	// adds a func to be executed at certain stage of the views' lifecycles
+	// the stages are called hooks for it is short and clear
+	// 
+	// there can be only one callback per hook at a time
+	api.on = function(hook, func) {
+		var i, possHooks = [
+			'pre-init', 'post-init',
+			'pre-remove', 'post-remove'
+		];
+		
+		for(i = 0; i < possHooks.length; i++) {
+			if(hook == possHooks[i]) {
+				hooks.set(hook, func);
+				return;
+			}
+		}
+		
+		throw new Error('Could not identify hook: '+hook);
+	};
+	
+	// removes the callback that have been attached to the given hook
+	api.off = function(hook) {
+		return hooks.delete(hook);
+	};
+	
 	// returns the string representation of the root node
 	api.show = function() {
 		return root.toString();
@@ -346,8 +418,10 @@ var hier = (function() {
 	// clears the current tree and registry
 	// useful for unit testing
 	api.clear = function() {
-		root.die();
 		registry.clear();
+		hooks.clear();
+		
+		root.die();
 		
 		init();
 	};
