@@ -1,0 +1,14 @@
+{
+  "name": "hier",
+  "description": "tree keeping track of what is on the page",
+  "main": "src/hier.js",
+  "authors": [
+    {"name": "pavelsof", "homepage": "http://pavelsof.com/"}
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components"
+  ]
+}
