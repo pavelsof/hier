@@ -188,11 +188,11 @@ var hier = (function() {
 		// 
 		// calls the pre-remove and post-remove hook callbacks, if such
 		node.die = function() {
-			node.removeChildren();
-			
 			if(hooks.has('pre-remove')) {
 				hooks.get('pre-remove')(path.toString(), view);
 			}
+			
+			node.removeChildren();
 			
 			elem = null;
 			func = null;

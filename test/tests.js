@@ -182,7 +182,27 @@ QUnit.test('reg a node and add with params', function(assert) {
 });
 
 // on
-QUnit.test('on pre-init', function(assert) {
+QUnit.test('hook error at empty string', function(assert) {
+	assert.raises(function() {
+		hier.on('', function() {});
+	}, /could not identify hook/i);
+});
+
+QUnit.test('hook error at non-existent hook', function(assert) {
+	assert.raises(function() {
+		hier.on('hook', function() {});
+	}, /could not identify hook/i);
+	
+	assert.raises(function() {
+		hier.on(undefined, function() {});
+	}, /could not identify hook/i);
+	
+	assert.raises(function() {
+		hier.on(null, function() {});
+	}, /could not identify hook/i);
+});
+
+QUnit.test('pre-init works with one node', function(assert) {
 	assert.expect(1);
 	
 	hier.on('pre-init', function(path) {
@@ -195,7 +215,7 @@ QUnit.test('on pre-init', function(assert) {
 	hier.add('/node', '#qunit-fixture', function() {});
 });
 
-QUnit.test('on post-init', function(assert) {
+QUnit.test('post-init works with one node', function(assert) {
 	assert.expect(2);
 	
 	hier.on('post-init', function(path, view) {
@@ -209,7 +229,7 @@ QUnit.test('on post-init', function(assert) {
 	hier.add('/node', '#qunit-fixture', function() { return 42; });
 });
 
-QUnit.test('on pre-remove', function(assert) {
+QUnit.test('pre-remove works with one node', function(assert) {
 	assert.expect(2);
 	
 	hier.add('/node', '#qunit-fixture', function() { return 42; });
@@ -224,7 +244,22 @@ QUnit.test('on pre-remove', function(assert) {
 	hier.remove('/node');
 });
 
-QUnit.test('on post-remove', function(assert) {
+QUnit.test('pre-remove hooks in before children are removed', function(assert) {
+	assert.expect(4);
+	
+	hier.add('/node', '#qunit-fixture', function(elem) {
+		elem.innerHTML = '<div id="nested"></div>';
+	});
+	hier.add('/node/nested', '#nested', function() {});
+	
+	hier.on('pre-remove', function(path, view) {
+		assert.equal(hier.has('/node'), true);
+		assert.equal(hier.has('/node/nested'), true);
+	});
+	hier.remove('/node');
+});
+
+QUnit.test('post-remove works with one node', function(assert) {
 	assert.expect(1);
 	
 	hier.add('/node', '#qunit-fixture', function() {});
