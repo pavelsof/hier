@@ -27,9 +27,12 @@ do `hier.add(path, params)` from then on.
 
 `hier.unreg(path)` and you cannot use the shorthand `hier.add` any more.
 
-`hier.on(hook, func)` hooks `func(path, view)` to one of `pre-init`,
-`post-init`, `pre-remove` or `post-remove`; the `view` is the output of the
-constructor.
+`hier.on(hook, func)` hooks `func` to one of (`view` is the output of the
+constructor):
+* `pre-init`, expects `func(path, params)`;
+* `post-init`, expects `func(path, view)`;
+* `pre-remove`, expects `func(path, view)`;
+* `post-remove`, expects `func(path)`.
 
 `hier.off(hook)` removes the previously hooked function.
 

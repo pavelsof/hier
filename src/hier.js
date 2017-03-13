@@ -96,7 +96,7 @@ var hier = (function() {
 		// calls the pre-init and post-init hook callbacks, if such
 		node.update = function(params) {
 			if(hooks.has('pre-init')) {
-				hooks.get('pre-init')(path.toString());
+				hooks.get('pre-init')(path.toString(), params);
 			}
 			
 			view = func(elem, params);
@@ -347,10 +347,9 @@ var hier = (function() {
 		parentNode.removeChild(path.getLast());
 	};
 	
-	// invokes the update function of the node at the given path
-	// 
-	// children nodes are removed to ensure the same blank state as when
-	// invoking hier.add(path)
+	// removes a node and adds it back again
+	// if the node is already there, elem and func are copied over
+	// otherwise the node is expected to be registered
 	api.update = function(path, params) {
 		var node;
 		

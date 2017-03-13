@@ -203,16 +203,17 @@ QUnit.test('hook error at non-existent hook', function(assert) {
 });
 
 QUnit.test('pre-init works with one node', function(assert) {
-	assert.expect(1);
+	assert.expect(2);
 	
-	hier.on('pre-init', function(path) {
+	hier.on('pre-init', function(path, param) {
 		assert.equal(path, '/node');
+		assert.equal(param, 42);
 	});
 	
-	hier.add('/node', '#qunit-fixture', function() {});
+	hier.add('/node', '#qunit-fixture', function() {}, 42);
 	
 	hier.off('pre-init');
-	hier.add('/node', '#qunit-fixture', function() {});
+	hier.add('/node', '#qunit-fixture', function() {}, 42);
 });
 
 QUnit.test('post-init works with one node', function(assert) {
