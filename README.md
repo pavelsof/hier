@@ -29,10 +29,15 @@ do `hier.add(path, params)` from then on.
 
 `hier.on(hook, func)` hooks `func` to one of (`view` is the output of the
 constructor):
-* `pre-init`, expects `func(path, params)`;
-* `post-init`, expects `func(path, view)`;
-* `pre-remove`, expects `func(path, view)`;
-* `post-remove`, expects `func(path)`.
+* `pre-init`, expects `func(path, params)`, called before the node constructor
+  is invoked;
+* `post-init`, expects `func(path, view)`, called after the node constructor is
+  invoked;
+* `pre-empty`, expects `func(path, view)`, called when the node is being removed
+  but before its children are;
+* `pre-remove`, expects `func(path, view)`, called when the node is being
+  removed after its children are;
+* `post-remove`, expects `func(path)`, called after the node is removed.
 
 `hier.off(hook)` removes the previously hooked function.
 

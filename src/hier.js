@@ -186,13 +186,17 @@ var hier = (function() {
 		// recursively removes all children
 		// unsets the node's properties
 		// 
-		// calls the pre-remove and post-remove hook callbacks, if such
+		// calls the pre-empty, pre-remove and post-remove callbacks, if such
 		node.die = function() {
-			if(hooks.has('pre-remove')) {
-				hooks.get('pre-remove')(path.toString(), view);
+			if(hooks.has('pre-empty')) {
+				hooks.get('pre-empty')(path.toString(), view);
 			}
 			
 			node.removeChildren();
+			
+			if(hooks.has('pre-remove')) {
+				hooks.get('pre-remove')(path.toString(), view);
+			}
 			
 			elem = null;
 			func = null;
@@ -391,7 +395,7 @@ var hier = (function() {
 	api.on = function(hook, func) {
 		var i, possHooks = [
 			'pre-init', 'post-init',
-			'pre-remove', 'post-remove'
+			'pre-empty', 'pre-remove', 'post-remove'
 		];
 		
 		for(i = 0; i < possHooks.length; i++) {

@@ -230,6 +230,36 @@ QUnit.test('post-init works with one node', function(assert) {
 	hier.add('/node', '#qunit-fixture', function() { return 42; });
 });
 
+QUnit.test('pre-empty works with one node', function(assert) {
+	assert.expect(2);
+	
+	hier.add('/node', '#qunit-fixture', function() { return 42; });
+	hier.on('pre-empty', function(path, view) {
+		assert.equal(path, '/node');
+		assert.equal(view, 42);
+	});
+	hier.remove('/node');
+	
+	hier.add('/node', '#qunit-fixture', function() { return 42; });
+	hier.off('pre-empty');
+	hier.remove('/node');
+});
+
+QUnit.test('pre-empty hooks in before children are removed', function(assert) {
+	assert.expect(4);
+	
+	hier.add('/node', '#qunit-fixture', function(elem) {
+		elem.innerHTML = '<div id="nested"></div>';
+	});
+	hier.add('/node/nested', '#nested', function() {});
+	
+	hier.on('pre-empty', function(path, view) {
+		assert.equal(hier.has('/node'), true);
+		assert.equal(hier.has('/node/nested'), true);
+	});
+	hier.remove('/node');
+});
+
 QUnit.test('pre-remove works with one node', function(assert) {
 	assert.expect(2);
 	
@@ -245,7 +275,7 @@ QUnit.test('pre-remove works with one node', function(assert) {
 	hier.remove('/node');
 });
 
-QUnit.test('pre-remove hooks in before children are removed', function(assert) {
+QUnit.test('pre-remove hooks in after children are removed', function(assert) {
 	assert.expect(4);
 	
 	hier.add('/node', '#qunit-fixture', function(elem) {
@@ -254,8 +284,13 @@ QUnit.test('pre-remove hooks in before children are removed', function(assert) {
 	hier.add('/node/nested', '#nested', function() {});
 	
 	hier.on('pre-remove', function(path, view) {
-		assert.equal(hier.has('/node'), true);
-		assert.equal(hier.has('/node/nested'), true);
+		if(path == '/node/nested') {
+			assert.equal(hier.has('/node'), true);
+			assert.equal(hier.has('/node/nested'), true);
+		} else if(path == '/node') {
+			assert.equal(hier.has('/node'), true);
+			assert.equal(hier.has('/node/nested'), false);
+		}
 	});
 	hier.remove('/node');
 });
