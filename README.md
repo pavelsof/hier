@@ -14,10 +14,10 @@ Plays well with the likes of
 `hier.add(path, elem, func, params)` invokes `func(elem, params)` and adds the
 path to the tree. If `elem` is a string, the right dom element will be
 query-selected for you. Does nothing if the path has already been added with the
-same primitive param.
+same primitive param. Returns the return of `func` (also in the latter case).
 
 `hier.update(path, params)` invokes `func(elem, params)` with the new params,
-removing the path's descendants before that.
+removing the path's descendants before that. Returns the return of `func`.
 
 `hier.remove(path)` removes the path from the tree.
 

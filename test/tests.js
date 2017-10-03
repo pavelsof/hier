@@ -92,6 +92,12 @@ QUnit.test('add error at short add without reg', function(assert) {
 	}, /find in registry/);
 });
 
+QUnit.test('add returns the return of the update func', function(assert) {
+	var update = function(elem) { return 42; };
+	assert.equal(hier.add('/node', '#qunit-fixture', update), 42);
+	assert.equal(hier.add('/node', '#qunit-fixture', update), 42);
+});
+
 // remove
 QUnit.test('remove a node', function(assert) {
 	hier.add('/node', '#qunit-fixture', function() {});
@@ -160,6 +166,12 @@ QUnit.test('update removes the children nodes', function(assert) {
 	assert.equal(hier.has('/node/nested'), false);
 });
 
+QUnit.test('update returns the return of the update func', function(assert) {
+	var update = function(elem) { return 42; };
+	hier.add('/node', '#qunit-fixture', update);
+	assert.equal(hier.update('/node'), 42);
+});
+
 // has
 QUnit.test('has checks correctly', function(assert) {
 	assert.equal(hier.has('/node'), false);
@@ -223,6 +235,11 @@ QUnit.test('add an added regged node updates only if needed', function(assert) {
 	}
 
 	assert.deepEqual(calledWith, params);
+});
+
+QUnit.test('add a regged node returns correctly', function(assert) {
+	hier.reg('/node', '#qunit-fixture', function(elem) { return 42; });
+	assert.equal(hier.add('/node'), 42);
 });
 
 // on

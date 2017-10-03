@@ -90,6 +90,11 @@ var hier = (function() {
 			return elem;
 		};
 
+		// return the return value of the last update call
+		node.getView = function() {
+			return view;
+		};
+
 		// invokes the node's update function and returns its output
 		// it is invoked with elem as first arg and with params as second
 		// 
@@ -357,9 +362,10 @@ var hier = (function() {
 		if(node) {
 			if(node.needsUpdate(params)) {
 				node.removeChildren();
-				node.update(params);
+				return node.update(params);
+			} else {
+				return node.getView();
 			}
-			return;
 		}
 
 		// find the parent node
@@ -370,7 +376,7 @@ var hier = (function() {
 
 		// add and update
 		parentNode.addChild(path, elem, func);
-		parentNode.find([path.getLast()]).update(params);
+		return parentNode.find([path.getLast()]).update(params);
 	};
 
 	// removes the node at the given path
@@ -402,7 +408,7 @@ var hier = (function() {
 
 		node.removeChildren();
 
-		node.update(params);
+		return node.update(params);
 	};
 
 	// checks whether there is a node at the given path
