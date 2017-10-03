@@ -40,12 +40,6 @@ QUnit.test('add nested nodes', function(assert) {
 	assert.equal(hier.show(), '(root (node (nested) (another)))');
 });
 
-QUnit.test('add an added node does nothing', function(assert) {
-	hier.add('/node', '#qunit-fixture', function() {});
-	hier.add('/node', '#qunit-fixture', function() {});
-	assert.equal(hier.show(), '(root (node))');
-});
-
 QUnit.test('add invokes the update func', function(assert) {
 	hier.add('/node', '#qunit-fixture', function(elem) {
 		assert.equal(elem, document.querySelector('#qunit-fixture'));
@@ -57,6 +51,39 @@ QUnit.test('add invokes the update func with params', function(assert) {
 		assert.equal(elem, document.querySelector('#qunit-fixture'));
 		assert.equal(param, 'param');
 	}, 'param');
+});
+
+QUnit.test('add an added node does nothing', function(assert) {
+	hier.add('/node', '#qunit-fixture', function() {});
+	hier.add('/node', '#qunit-fixture', function() {});
+	assert.equal(hier.show(), '(root (node))');
+});
+
+QUnit.test('add an added node updates only if needed', function(assert) {
+	var calledWith = [];
+	var update = function(elem, param) { calledWith.push(param); };
+
+	var params = [true, false, 42, NaN, '', 'string'];
+	var i;
+
+	for(i = 0; i < params.length; i++) {
+		hier.add('/node', '#qunit-fixture', update, params[i]);
+		hier.add('/node', '#qunit-fixture', update, params[i]);
+	}
+
+	assert.deepEqual(calledWith, params);
+});
+
+QUnit.test('add an added node updates, object param', function(assert) {
+	var counter = 0;
+	var update = function(elem, param) { counter += 1; };
+
+	hier.add('/node', '#qunit-fixture', update, {});
+	hier.add('/node', '#qunit-fixture', update, {});
+	hier.add('/node', '#qunit-fixture', update, {answer: 42});
+	hier.add('/node', '#qunit-fixture', update, {answer: 42});
+
+	assert.equal(counter, 4);
 });
 
 QUnit.test('add error at short add without reg', function(assert) {
@@ -93,23 +120,23 @@ QUnit.test('remove a parent node', function(assert) {
 // update
 QUnit.test('update invokes the update func', function(assert) {
 	assert.expect(2);
-	
+
 	var update = function(elem) {
 		assert.equal(elem, document.querySelector('#qunit-fixture'));
 	};
-	
+
 	hier.add('/node', '#qunit-fixture', update);
 	hier.update('/node');
 });
 
 QUnit.test('update invokes the update func with params', function(assert) {
 	assert.expect(4);
-	
+
 	var update = function(elem, param) {
 		assert.equal(elem, document.querySelector('#qunit-fixture'));
 		assert.equal(param, 'param');
 	};
-	
+
 	hier.add('/node', '#qunit-fixture', update, 'param');
 	hier.update('/node', 'param');
 });
@@ -126,9 +153,9 @@ QUnit.test('update removes the children nodes', function(assert) {
 		elem.innerHTML = '<div id="nested"></div>';
 	});
 	hier.add('/node/nested', '#nested', function() {});
-	
+
 	hier.update('/node');
-	
+
 	assert.equal(hier.show(), '(root (node))');
 	assert.equal(hier.has('/node/nested'), false);
 });
@@ -155,7 +182,7 @@ QUnit.test('has is not confused by reg', function(assert) {
 QUnit.test('reg a node and add', function(assert) {
 	hier.reg('/node', '#qunit-fixture', function() {});
 	assert.equal(hier.show(), '(root)');
-	
+
 	hier.add('/node');
 	assert.equal(hier.show(), '(root (node))');
 });
@@ -163,12 +190,12 @@ QUnit.test('reg a node and add', function(assert) {
 QUnit.test('reg a nested node and add', function(assert) {
 	hier.reg('/node/nested', '#nested', function() {});
 	assert.equal(hier.show(), '(root)');
-	
+
 	hier.add('/node', '#qunit-fixture', function(elem) {
 		elem.innerHTML = '<div id="nested"></div>';
 	});
 	assert.equal(hier.show(), '(root (node))');
-	
+
 	hier.add('/node/nested');
 	assert.equal(hier.show(), '(root (node (nested)))');
 });
@@ -179,6 +206,23 @@ QUnit.test('reg a node and add with params', function(assert) {
 		assert.equal(param, 'param');
 	});
 	hier.add('/node', 'param');
+});
+
+QUnit.test('add an added regged node updates only if needed', function(assert) {
+	var calledWith = [];
+	var update = function(elem, param) { calledWith.push(param); };
+
+	var params = [true, false, 42, NaN, '', 'string'];
+	var i;
+
+	hier.reg('/node', '#qunit-fixture', update);
+
+	for(i = 0; i < params.length; i++) {
+		hier.add('/node', params[i]);
+		hier.add('/node', params[i]);
+	}
+
+	assert.deepEqual(calledWith, params);
 });
 
 // on
@@ -192,11 +236,11 @@ QUnit.test('hook error at non-existent hook', function(assert) {
 	assert.raises(function() {
 		hier.on('hook', function() {});
 	}, /could not identify hook/i);
-	
+
 	assert.raises(function() {
 		hier.on(undefined, function() {});
 	}, /could not identify hook/i);
-	
+
 	assert.raises(function() {
 		hier.on(null, function() {});
 	}, /could not identify hook/i);
@@ -204,42 +248,42 @@ QUnit.test('hook error at non-existent hook', function(assert) {
 
 QUnit.test('pre-init works with one node', function(assert) {
 	assert.expect(2);
-	
+
 	hier.on('pre-init', function(path, param) {
 		assert.equal(path, '/node');
 		assert.equal(param, 42);
 	});
-	
+
 	hier.add('/node', '#qunit-fixture', function() {}, 42);
-	
+
 	hier.off('pre-init');
 	hier.add('/node', '#qunit-fixture', function() {}, 42);
 });
 
 QUnit.test('post-init works with one node', function(assert) {
 	assert.expect(2);
-	
+
 	hier.on('post-init', function(path, view) {
 		assert.equal(path, '/node');
 		assert.equal(view, 42);
 	});
-	
+
 	hier.add('/node', '#qunit-fixture', function() { return 42; });
-	
+
 	hier.off('post-init');
 	hier.add('/node', '#qunit-fixture', function() { return 42; });
 });
 
 QUnit.test('pre-empty works with one node', function(assert) {
 	assert.expect(2);
-	
+
 	hier.add('/node', '#qunit-fixture', function() { return 42; });
 	hier.on('pre-empty', function(path, view) {
 		assert.equal(path, '/node');
 		assert.equal(view, 42);
 	});
 	hier.remove('/node');
-	
+
 	hier.add('/node', '#qunit-fixture', function() { return 42; });
 	hier.off('pre-empty');
 	hier.remove('/node');
@@ -247,12 +291,12 @@ QUnit.test('pre-empty works with one node', function(assert) {
 
 QUnit.test('pre-empty hooks in before children are removed', function(assert) {
 	assert.expect(4);
-	
+
 	hier.add('/node', '#qunit-fixture', function(elem) {
 		elem.innerHTML = '<div id="nested"></div>';
 	});
 	hier.add('/node/nested', '#nested', function() {});
-	
+
 	hier.on('pre-empty', function(path, view) {
 		assert.equal(hier.has('/node'), true);
 		assert.equal(hier.has('/node/nested'), true);
@@ -262,14 +306,14 @@ QUnit.test('pre-empty hooks in before children are removed', function(assert) {
 
 QUnit.test('pre-remove works with one node', function(assert) {
 	assert.expect(2);
-	
+
 	hier.add('/node', '#qunit-fixture', function() { return 42; });
 	hier.on('pre-remove', function(path, view) {
 		assert.equal(path, '/node');
 		assert.equal(view, 42);
 	});
 	hier.remove('/node');
-	
+
 	hier.add('/node', '#qunit-fixture', function() { return 42; });
 	hier.off('pre-remove');
 	hier.remove('/node');
@@ -277,12 +321,12 @@ QUnit.test('pre-remove works with one node', function(assert) {
 
 QUnit.test('pre-remove hooks in after children are removed', function(assert) {
 	assert.expect(4);
-	
+
 	hier.add('/node', '#qunit-fixture', function(elem) {
 		elem.innerHTML = '<div id="nested"></div>';
 	});
 	hier.add('/node/nested', '#nested', function() {});
-	
+
 	hier.on('pre-remove', function(path, view) {
 		if(path == '/node/nested') {
 			assert.equal(hier.has('/node'), true);
@@ -297,13 +341,13 @@ QUnit.test('pre-remove hooks in after children are removed', function(assert) {
 
 QUnit.test('post-remove works with one node', function(assert) {
 	assert.expect(1);
-	
+
 	hier.add('/node', '#qunit-fixture', function() {});
 	hier.on('post-remove', function(path) {
 		assert.equal(path, '/node');
 	});
 	hier.remove('/node');
-	
+
 	hier.off('post-remove');
 	hier.add('/node', '#qunit-fixture', function() {});
 	hier.remove('/node');

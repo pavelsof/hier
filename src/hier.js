@@ -76,7 +76,9 @@ var hier = (function() {
 	var createNode = function(path, elem, func) {
 		var node = {};
 		var children = {};
+
 		var view;
+		var lastParamType, lastParamString;
 
 		// returns the node's name
 		node.getName = function() {
@@ -105,7 +107,33 @@ var hier = (function() {
 				hooks.get('post-init')(path.toString(), view);
 			}
 
+			lastParamType = typeof params;
+			if(['boolean', 'number', 'string'].indexOf(lastParamType) > -1) {
+				lastParamString = params.toString();
+			}
+
 			return view;
+		};
+
+		// returns false if the given arg is the same as the one used for the
+		// last update func invoking and true otherwise
+		//
+		// this only works if both args are of the same type and that is one
+		// of: undefined, boolean, number, string
+		node.needsUpdate = function(params) {
+			if(typeof params != lastParamType) {
+				return true;
+			}
+
+			if(lastParamType == 'undefined') {
+				return false;
+			}
+
+			if(['boolean', 'number', 'string'].indexOf(lastParamType) > -1) {
+				return params.toString() != lastParamString;
+			}
+
+			return true;
 		};
 
 		// recursively finds the node corresponding to the given path array
@@ -230,7 +258,7 @@ var hier = (function() {
 
 
 	// constructor for a simple map object
-	// this constructor be replaced by new Map() in the far future
+	// to be replaced by new Map() in the far future
 	var createMap = function() {
 		var data = {};
 		var map = {};
@@ -303,23 +331,15 @@ var hier = (function() {
 	var api = {};
 
 	// creates a new node and adds it to the hier tree
-	// if the node is already there, does nothing
+	// if the node is already there and it has been updated with the same
+	// params last time, does nothing
+	// if the node is already there but has been updated with different params
+	// last time, removes its children and updates it
 	// if there is a sibling with the same elem, replaces it
 	api.add = function(path, elem, func, params) {
-		var parentNode, regValue;
+		var node, parentNode, regValue;
 
 		path = createPath(path);
-
-		// do nothing if the node is already there
-		if(root.find(path.toArray())) {
-			return;
-		}
-
-		// find the parent node
-		parentNode = root.find(path.getUpToLast());
-		if(parentNode == null) {
-			throw new Error('Could not find path: '+path.toString());
-		}
 
 		// find elem and func in the registry if not provided
 		if(!(elem && func)) {
@@ -330,6 +350,22 @@ var hier = (function() {
 			params = elem;  // the second arg will be the params then
 			elem = regValue.elem;
 			func = regValue.func;
+		}
+
+		// if the node is there, update it if needed and return
+		node = root.find(path.toArray());
+		if(node) {
+			if(node.needsUpdate(params)) {
+				node.removeChildren();
+				node.update(params);
+			}
+			return;
+		}
+
+		// find the parent node
+		parentNode = root.find(path.getUpToLast());
+		if(parentNode == null) {
+			throw new Error('Could not find path: '+path.toString());
 		}
 
 		// add and update

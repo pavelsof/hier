@@ -13,7 +13,8 @@ Plays well with the likes of
 
 `hier.add(path, elem, func, params)` invokes `func(elem, params)` and adds the
 path to the tree. If `elem` is a string, the right dom element will be
-query-selected for you.
+query-selected for you. Does nothing if the path has already been added with the
+same primitive param.
 
 `hier.update(path, params)` invokes `func(elem, params)` with the new params,
 removing the path's descendants before that.
