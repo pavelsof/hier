@@ -339,7 +339,7 @@ var hier = (function() {
 	// if the node is already there and it has been updated with the same
 	// params last time, does nothing
 	// if the node is already there but has been updated with different params
-	// last time, removes its children and updates it
+	// last time, it is removed and added again
 	// if there is a sibling with the same elem, replaces it
 	api.add = function(path, elem, func, params) {
 		var node, parentNode, regValue;
@@ -357,21 +357,20 @@ var hier = (function() {
 			func = regValue.func;
 		}
 
-		// if the node is there, update it if needed and return
-		node = root.find(path.toArray());
-		if(node) {
-			if(node.needsUpdate(params)) {
-				node.removeChildren();
-				return node.update(params);
-			} else {
-				return node.getView();
-			}
-		}
-
 		// find the parent node
 		parentNode = root.find(path.getUpToLast());
 		if(parentNode == null) {
 			throw new Error('Could not find path: '+path.toString());
+		}
+
+		// if the node is there, update it if needed and return
+		node = root.find(path.toArray());
+		if(node) {
+			if(node.needsUpdate(params)) {
+				parentNode.removeChild(path.getLast());
+			} else {
+				return node.getView();
+			}
 		}
 
 		// add and update
