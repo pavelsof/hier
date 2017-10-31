@@ -103,13 +103,13 @@ var hier = (function() {
 		// calls the pre-init and post-init hook callbacks, if such
 		node.update = function(params) {
 			if(hooks.has('pre-init')) {
-				hooks.get('pre-init')(path.toString(), params);
+				hooks.get('pre-init')(path.toString(), elem, params);
 			}
 
 			view = func(elem, params);
 
 			if(hooks.has('post-init')) {
-				hooks.get('post-init')(path.toString(), view);
+				hooks.get('post-init')(path.toString(), elem, view);
 			}
 
 			lastParamType = typeof params;
@@ -222,13 +222,13 @@ var hier = (function() {
 		// calls the pre-empty, pre-remove and post-remove callbacks, if such
 		node.die = function() {
 			if(hooks.has('pre-empty')) {
-				hooks.get('pre-empty')(path.toString(), view);
+				hooks.get('pre-empty')(path.toString(), elem, view);
 			}
 
 			node.removeChildren();
 
 			if(hooks.has('pre-remove')) {
-				hooks.get('pre-remove')(path.toString(), view);
+				hooks.get('pre-remove')(path.toString(), elem, view);
 			}
 
 			elem = null;

@@ -1,3 +1,4 @@
+QUnit.config.notrycatch = true;
 QUnit.config.noglobals = true;
 
 QUnit.module('hier', {
@@ -264,10 +265,11 @@ QUnit.test('hook error at non-existent hook', function(assert) {
 });
 
 QUnit.test('pre-init works with one node', function(assert) {
-	assert.expect(2);
+	assert.expect(3);
 
-	hier.on('pre-init', function(path, param) {
+	hier.on('pre-init', function(path, elem, param) {
 		assert.equal(path, '/node');
+		assert.equal(elem, document.getElementById('qunit-fixture'));
 		assert.equal(param, 42);
 	});
 
@@ -278,10 +280,11 @@ QUnit.test('pre-init works with one node', function(assert) {
 });
 
 QUnit.test('post-init works with one node', function(assert) {
-	assert.expect(2);
+	assert.expect(3);
 
-	hier.on('post-init', function(path, view) {
+	hier.on('post-init', function(path, elem, view) {
 		assert.equal(path, '/node');
+		assert.equal(elem, document.getElementById('qunit-fixture'));
 		assert.equal(view, 42);
 	});
 
@@ -292,11 +295,12 @@ QUnit.test('post-init works with one node', function(assert) {
 });
 
 QUnit.test('pre-empty works with one node', function(assert) {
-	assert.expect(2);
+	assert.expect(3);
 
 	hier.add('/node', '#qunit-fixture', function() { return 42; });
-	hier.on('pre-empty', function(path, view) {
+	hier.on('pre-empty', function(path, elem, view) {
 		assert.equal(path, '/node');
+		assert.equal(elem, document.getElementById('qunit-fixture'));
 		assert.equal(view, 42);
 	});
 	hier.remove('/node');
@@ -314,7 +318,7 @@ QUnit.test('pre-empty hooks in before children are removed', function(assert) {
 	});
 	hier.add('/node/nested', '#nested', function() {});
 
-	hier.on('pre-empty', function(path, view) {
+	hier.on('pre-empty', function(path, elem, view) {
 		assert.equal(hier.has('/node'), true);
 		assert.equal(hier.has('/node/nested'), true);
 	});
@@ -326,7 +330,7 @@ QUnit.test('pre-empty works when adding an added node that updates', function(as
 
 	assert.expect(2);
 
-	hier.on('pre-empty', function(path, view) {
+	hier.on('pre-empty', function(path, elem, view) {
 		assert.equal(path, '/node');
 		assert.equal(view, 'a');
 	});
@@ -338,11 +342,12 @@ QUnit.test('pre-empty works when adding an added node that updates', function(as
 });
 
 QUnit.test('pre-remove works with one node', function(assert) {
-	assert.expect(2);
+	assert.expect(3);
 
 	hier.add('/node', '#qunit-fixture', function() { return 42; });
-	hier.on('pre-remove', function(path, view) {
+	hier.on('pre-remove', function(path, elem, view) {
 		assert.equal(path, '/node');
+		assert.equal(elem, document.getElementById('qunit-fixture'));
 		assert.equal(view, 42);
 	});
 	hier.remove('/node');
@@ -360,7 +365,7 @@ QUnit.test('pre-remove hooks in after children are removed', function(assert) {
 	});
 	hier.add('/node/nested', '#nested', function() {});
 
-	hier.on('pre-remove', function(path, view) {
+	hier.on('pre-remove', function(path, elem, view) {
 		if(path == '/node/nested') {
 			assert.equal(hier.has('/node'), true);
 			assert.equal(hier.has('/node/nested'), true);
@@ -375,10 +380,11 @@ QUnit.test('pre-remove hooks in after children are removed', function(assert) {
 QUnit.test('pre-remove works when adding an added node that updates', function(assert) {
 	var update = function(elem, param) { return param; };
 
-	assert.expect(2);
+	assert.expect(3);
 
-	hier.on('pre-remove', function(path, view) {
+	hier.on('pre-remove', function(path, elem, view) {
 		assert.equal(path, '/node');
+		assert.equal(elem, document.getElementById('qunit-fixture'));
 		assert.equal(view, 'a');
 	});
 
